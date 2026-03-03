@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+  // "native" — для твоего Mac
+  // "debian-openssl-1.0.x" — для сервера/контейнера (как указано в ошибке)
+  binaryTargets = ["native", "debian-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model chess_data_new {
+  id                    Int       @id @default(autoincrement())
+  date                  Int       @map("Дата")
+  enterprise            String    @map("Предприятие") @db.VarChar(255)
+  product               String    @map("Продукт") @db.VarChar(255)
+  groupPlanFact         String?   @map("ГруппировкаПланФакт") @db.VarChar(255)
+  forRemains            String?   @map("Для остатков") @db.VarChar(255)
+  plan                  Float?    @map("План")
+  fact                  Float?    @map("Факт")
+  stage                 String?   @map("Этап") @db.VarChar(255)
+  expected              Float?    @map("Ожид")
+  tradeRemains          Float?    @map("Торговые остатки")
+  freeCapacity          Float?    @map("Свободная емкость")
+  parkVolume            Float?    @map("Объем парка")
+  productNumbering      Int?      @map("Нумерация продукта")
+  remainsNumbering      Int?      @map("Нумерация остатков")
+  groupNumbering        Int?      @map("Нумерация групп")
+  tradeRemains2         Float?    @map("ТорговыеОстатки_2")
+  parkVolumeForForecast Float?    @map("ОбъемПаркаДляПрогноза")
+  railwayShipment       Decimal?  @map("Ж/Д отгрузка") @db.Decimal(28, 6)
+  waterShipment         Decimal?  @map("Отгрузка по воде") @db.Decimal(28, 6)
+  pipe                  Decimal?  @map("Труба") @db.Decimal(28, 6)
+  mnpp                  Decimal?  @map("МНПП") @db.Decimal(28, 6)
+  autoShipment          Decimal?  @map("Автоотгрузка") @db.Decimal(28, 6)
+  shipmentPlan          Decimal?  @map("ОтгрузкаПлан") @db.Decimal(32, 6)
+  shipmentFact          Decimal?  @map("ОтгрузкаФакт") @db.Decimal(32, 6)
+  waterShipmentFact     Decimal?  @map("Отгрузка вода факт") @db.Decimal(28, 6)
+  railwayShipmentFact   Decimal?  @map("Отгрузка жд факт") @db.Decimal(28, 6)
+  autoShipmentFact      Decimal?  @map("Отгрузка авто факт") @db.Decimal(28, 6)
+  pipeShipmentFact      Decimal?  @map("Отгрузка труба факт") @db.Decimal(28, 6)
+  mnppShipmentFact      Decimal?  @map("Отгрузка МНПП факт") @db.Decimal(28, 6)
+  pourShipment          BigInt?   @map("Налив (отгрузка)")
+  unregisteredShipment  BigInt?   @map("Неоформл. отгрузка")
+  passport              Decimal?  @map("Паспортный") @db.Decimal(28, 6)
+  passportForecast      Decimal?  @map("ПаспортныйПрогноз") @db.Decimal(28, 6)
+  shipment              Decimal?  @map("Отгрузка") @db.Decimal(32, 6)
+  date2                 Int?      @map("Дата_2")
+  shipmentForForecast   Decimal?  @map("Отгрузка_для_прогноза") @db.Decimal(38, 6)
+  expectedForForecast   Float?    @map("Ожид_для_прогноза")
+  obr                   Decimal?  @map("ОБР") @db.Decimal(28, 6)
+  insertedAt            DateTime? @default(now()) @map("inserted_at") @db.Timestamp(6)
+
+  @@map("chess_data_new")
+}
+
+model base_forecast_data_tmp {
+  id                     Int       @id @unique
+  forecast_date          DateTime? @db.Date
+  enterprise             String?   @db.VarChar(40)
+  product_name           String?   @db.VarChar(250)
+  railway                Int?
+  tube                   Int?
+  mnpp                   Int?
+  water                  Int?
+  full_shippment         Int?
+  manufacture            Int?
+  leftovers_all          Int?
+  leftovers_pass         Int?
+  free_volume            Int?
+  unformulated_shippment Int?
+  reserv_volume          Int?
+  manufacture_plan       Int?
+  manufacture_obr        Int?
+  shippment_plan_zhd     Int?
+  shippment_obr_zhd      Int?
+  shippment_plan_tube    Int?
+  shippment_obr_tube     Int?
+  shippment_plan_mnpp    Int?
+  shippment_obr_mnpp     Int?
+  shippment_plan_water   Int?
+  shippment_obr_water    Int?
+  created_at             DateTime? @db.Timestamp(6)
+  author                 String?   @db.VarChar(100)
+}
+
+model forecast_data {
+  id                     Int                @id @default(autoincrement())
+  forecast_id            Int?
+  railway                Int?
+  tube                   Int?
+  mnpp                   Int?
+  water                  Int?
+  full_shippment         Int?
+  manufacture            Int?
+  leftovers_all          Int?
+  leftovers_pass         Int?
+  free_volume            Int?
+  unformulated_shippment Int?
+  reserv_volume          Int?
+  manufacture_plan       Int?
+  manufacture_obr        Int?
+  shippment_plan_zhd     Int?
+  shippment_obr_zhd      Int?
+  shippment_plan_tube    Int?
+  shippment_obr_tube     Int?
+  shippment_plan_mnpp    Int?
+  shippment_obr_mnpp     Int?
+  shippment_plan_water   Int?
+  shippment_obr_water    Int?
+  created_at             DateTime?          @db.Timestamp(6)
+  author                 String?            @db.VarChar(250)
+  products_forecast      products_forecast? @relation(fields: [forecast_id], references: [forecast_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model products_forecast {
+  id            Int             @id @default(autoincrement())
+  enterprise    String          @db.VarChar(255)
+  product_name  String          @db.VarChar(255)
+  forecast_date DateTime        @db.Date
+  forecast_id   Int             @unique @default(autoincrement())
+  forecast_data forecast_data[]
+}
+
+model sample {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(255)
+  author     String   @db.VarChar(255)
+  created_at DateTime @db.Timestamp(6)
+  forecasts  Json     @db.Json
+
+  @@index([author], map: "ix_sample_author")
+  @@index([name], map: "ix_sample_name")
+}
+
+model visits_history {
+  id       Int      @id @default(autoincrement())
+  username String   @db.VarChar(255)
+  date     DateTime @db.Timestamp(6)
+  action   String   @db.VarChar(255)
+
+  @@index([action], map: "ix_visits_history_action")
+  @@index([username], map: "ix_visits_history_username")
+}
+
+model wagon_forecast_tmp {
+  id            Int       @id @default(autoincrement())
+  forecast_date DateTime? @db.Date
+  enterprise    String?   @db.VarChar(40)
+  cargo_type    String?   @db.VarChar(50)
+  demand        Int?
+  forecast      Int?
+  shipment_fact Int?
+  osvoenie      Int?
+  forecast_type String?   @default("full") @db.VarChar(20)
+  created_at    DateTime? @db.Timestamp(6)
+}
+model scenarios {
+  id          Int              @id @default(autoincrement())
+  name        String           @db.VarChar(255)
+  author      String           @db.VarChar(255)
+  comment     String?          @db.Text
+  enterprise  String           @db.VarChar(255)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  edits       scenario_edits[]
+}
+
+model scenario_edits {
+  id           Int       @id @default(autoincrement())
+  scenarioId   Int       @map("scenario_id")
+  originalId   Int       @map("original_id")
+  field        String    @db.VarChar(255)
+  value        String    @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  scenario     scenarios @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@map("scenario_edits")
+}
