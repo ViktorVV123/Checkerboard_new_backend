@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ScenariosService } from './scenarios.service';
+import { CreateScenarioDto } from './dto/create-scenario.dto';
+import { SaveEditDto } from './dto/save-edit.dto';
+import { SaveSnapshotDto } from './dto/save-snapshot.dto';
 
 @ApiTags('Сценарии')
 @Controller('scenarios')
@@ -16,34 +19,34 @@ export class ScenariosController {
 
   @Post()
   @ApiOperation({ summary: 'Создать сценарий' })
-  create(@Body() body: { name: string; author: string; enterprise: string; comment?: string }) {
-    return this.scenariosService.create(body);
+  create(@Body() dto: CreateScenarioDto) {
+    return this.scenariosService.create(dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Удалить сценарий' })
   @ApiParam({ name: 'id', example: 1 })
-  delete(@Param('id') id: string) {
-    return this.scenariosService.delete(Number(id));
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.scenariosService.delete(id);
   }
 
   @Get(':id/edits')
   @ApiOperation({ summary: 'Получить правки сценария' })
   @ApiParam({ name: 'id', example: 1 })
-  getEdits(@Param('id') id: string) {
-    return this.scenariosService.getEdits(Number(id));
+  getEdits(@Param('id', ParseIntPipe) id: number) {
+    return this.scenariosService.getEdits(id);
   }
 
   @Post(':id/edits')
   @ApiOperation({ summary: 'Сохранить правку' })
   @ApiParam({ name: 'id', example: 1 })
   saveEdit(
-    @Param('id') id: string,
-    @Body() body: { originalId: number; field: string; value: string },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SaveEditDto,
   ) {
     return this.scenariosService.saveEdit({
-      scenarioId: Number(id),
-      ...body,
+      scenarioId: id,
+      ...dto,
     });
   }
 
@@ -51,23 +54,23 @@ export class ScenariosController {
   @ApiOperation({ summary: 'Сохранить полный снапшот продукта' })
   @ApiParam({ name: 'id', example: 1 })
   saveSnapshot(
-    @Param('id') id: string,
-    @Body() body: { product: string; rows: { originalId: number; field: string; value: string }[] },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SaveSnapshotDto,
   ) {
-    return this.scenariosService.saveSnapshot(Number(id), body.product, body.rows);
+    return this.scenariosService.saveSnapshot(id, dto.product, dto.rows);
   }
 
   @Get(':id/data')
   @ApiOperation({ summary: 'Получить данные сценария' })
   @ApiParam({ name: 'id', example: 1 })
-  getScenarioData(@Param('id') id: string) {
-    return this.scenariosService.getScenarioData(Number(id));
+  getScenarioData(@Param('id', ParseIntPipe) id: number) {
+    return this.scenariosService.getScenarioData(id);
   }
 
   @Delete('edits/:editId')
   @ApiOperation({ summary: 'Удалить правку' })
   @ApiParam({ name: 'editId', example: 1 })
-  deleteEdit(@Param('editId') editId: string) {
-    return this.scenariosService.deleteEdit(Number(editId));
+  deleteEdit(@Param('editId', ParseIntPipe) editId: number) {
+    return this.scenariosService.deleteEdit(editId);
   }
 }

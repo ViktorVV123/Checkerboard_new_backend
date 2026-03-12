@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -17,10 +17,18 @@ export class ScenariosService {
   }
 
   async delete(id: number) {
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${id} не найден`);
+    }
     return this.prisma.scenarios.delete({ where: { id } });
   }
 
   async getEdits(scenarioId: number) {
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id: scenarioId } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${scenarioId} не найден`);
+    }
     return this.prisma.scenario_edits.findMany({
       where: { scenarioId },
     });
@@ -32,6 +40,11 @@ export class ScenariosService {
     field: string;
     value: string;
   }) {
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id: data.scenarioId } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${data.scenarioId} не найден`);
+    }
+
     const existing = await this.prisma.scenario_edits.findFirst({
       where: {
         scenarioId: data.scenarioId,
@@ -50,18 +63,20 @@ export class ScenariosService {
     return this.prisma.scenario_edits.create({ data });
   }
 
-  // Сохранить ВСЕ данные продукта в сценарий
   async saveSnapshot(
     scenarioId: number,
     product: string,
     rows: { originalId: number; field: string; value: string }[],
   ) {
-    // Удаляем старые данные этого продукта в сценарии
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id: scenarioId } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${scenarioId} не найден`);
+    }
+
     const existingEdits = await this.prisma.scenario_edits.findMany({
       where: { scenarioId },
     });
 
-    // Фильтруем по originalId из новых данных
     const newOriginalIds = [...new Set(rows.map((r) => r.originalId))];
     const toDelete = existingEdits
       .filter((e) => newOriginalIds.includes(e.originalId))
@@ -73,7 +88,6 @@ export class ScenariosService {
       });
     }
 
-    // Создаём новые
     await this.prisma.scenario_edits.createMany({
       data: rows.map((edit) => ({
         scenarioId,
@@ -85,16 +99,23 @@ export class ScenariosService {
   }
 
   async deleteEdit(id: number) {
+    const edit = await this.prisma.scenario_edits.findUnique({ where: { id } });
+    if (!edit) {
+      throw new NotFoundException(`Правка с id ${id} не найдена`);
+    }
     return this.prisma.scenario_edits.delete({ where: { id } });
   }
 
-  // Восстановить данные сценария
   async getScenarioData(scenarioId: number) {
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id: scenarioId } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${scenarioId} не найден`);
+    }
+
     const edits = await this.prisma.scenario_edits.findMany({
       where: { scenarioId },
     });
 
-    // Группируем по originalId — собираем строку
     const rowsMap = new Map<number, Record<string, any>>();
     for (const edit of edits) {
       if (!rowsMap.has(edit.originalId)) {

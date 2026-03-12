@@ -10,7 +10,15 @@ import { CommonModule } from './common/common.module';
 import { ScenariosModule } from './scenarios/scenarios.module';
 
 @Module({
-  imports: [PrismaModule, FactoriesModule, ProductsModule, CalculationsModule, AuthModule, CommonModule, ScenariosModule],
+  imports: [
+    PrismaModule,
+    FactoriesModule,
+    ProductsModule,
+    CalculationsModule,
+    AuthModule,
+    CommonModule,
+    ScenariosModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

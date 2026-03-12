@@ -2,6 +2,13 @@ generator client {
   provider = "prisma-client-js"
   // "native" — для твоего Mac
   // "debian-openssl-1.0.x" — для сервера/контейнера (как указано в ошибке)
+  //# 1. Редактируешь prisma/schema.prisma
+  // # 2. Создаёшь миграцию:
+  // npx prisma migrate dev --name описание
+  //
+  // # Например:
+  // npx prisma migrate dev --name add-scenario-status
+
   binaryTargets = ["native", "debian-openssl-1.0.x"]
 }
 
