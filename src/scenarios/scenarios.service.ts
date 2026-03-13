@@ -127,4 +127,34 @@ export class ScenariosService {
 
     return Array.from(rowsMap.values());
   }
+
+  async approve(id: number, approvedBy: string) {
+    const scenario = await this.prisma.scenarios.findUnique({ where: { id } });
+    if (!scenario) {
+      throw new NotFoundException(`Сценарий с id ${id} не найден`);
+    }
+
+    // Снимаем утверждение с других сценариев этого предприятия
+    await this.prisma.scenarios.updateMany({
+      where: {
+        enterprise: scenario.enterprise,
+        approved: true,
+      },
+      data: {
+        approved: false,
+        approvedAt: null,
+        approvedBy: null,
+      },
+    });
+
+    // Утверждаем выбранный
+    return this.prisma.scenarios.update({
+      where: { id },
+      data: {
+        approved: true,
+        approvedAt: new Date(),
+        approvedBy,
+      },
+    });
+  }
 }

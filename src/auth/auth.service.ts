@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import * as https from 'https';
 
@@ -23,7 +24,10 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly idmBaseUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
     this.idmBaseUrl = this.configService.get<string>(
       'IDM_BASE_URL',
       'https://csc-idm.pro.lukoil.com/IdmLdapAuth/api/CommonActions',
@@ -87,6 +91,21 @@ export class AuthService {
       const status = error?.response?.status;
       this.logger.error(`Token verify failed: status=${status}`);
       throw new UnauthorizedException('Токен невалиден или истёк');
+    }
+  }
+
+  async logAccess(data: {
+    username: string;
+    fullName?: string;
+    email?: string;
+    method: string;
+    url: string;
+    ip?: string;
+  }) {
+    try {
+      await this.prisma.auth_logs.create({ data });
+    } catch (error) {
+      this.logger.error(`Failed to save auth log: ${error}`);
     }
   }
 }

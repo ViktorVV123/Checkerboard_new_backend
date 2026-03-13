@@ -73,4 +73,14 @@ export class ScenariosController {
   deleteEdit(@Param('editId', ParseIntPipe) editId: number) {
     return this.scenariosService.deleteEdit(editId);
   }
+
+  @Post(':id/approve')
+  @ApiOperation({ summary: 'Утвердить сценарий' })
+  @ApiParam({ name: 'id', example: 1 })
+  approve(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { approvedBy: string },
+  ) {
+    return this.scenariosService.approve(id, body.approvedBy);
+  }
 }
