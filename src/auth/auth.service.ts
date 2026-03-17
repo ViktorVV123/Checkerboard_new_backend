@@ -98,8 +98,9 @@ export class AuthService {
     username: string;
     fullName?: string;
     email?: string;
-    method: string;
-    url: string;
+    title?: string;
+    department?: string;
+    company?: string;
     ip?: string;
   }) {
     try {

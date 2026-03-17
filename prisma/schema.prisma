@@ -163,40 +163,43 @@ model wagon_forecast_tmp {
   forecast_type String?   @default("full") @db.VarChar(20)
   created_at    DateTime? @db.Timestamp(6)
 }
+
 model scenarios {
-  id          Int              @id @default(autoincrement())
-  name        String           @db.VarChar(255)
-  author      String           @db.VarChar(255)
-  comment     String?          @db.Text
-  enterprise  String           @db.VarChar(255)
-  approved    Boolean          @default(false)
-  approvedAt  DateTime?        @map("approved_at") @db.Timestamp(6)
-  approvedBy  String?          @map("approved_by") @db.VarChar(255)
-  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  edits       scenario_edits[]
+  id         Int              @id @default(autoincrement())
+  name       String           @db.VarChar(255)
+  author     String           @db.VarChar(255)
+  comment    String?          @db.Text
+  enterprise String           @db.VarChar(255)
+  approved   Boolean          @default(false)
+  approvedAt DateTime?        @map("approved_at") @db.Timestamp(6)
+  approvedBy String?          @map("approved_by") @db.VarChar(255)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  edits      scenario_edits[]
 }
 
 model scenario_edits {
-  id           Int       @id @default(autoincrement())
-  scenarioId   Int       @map("scenario_id")
-  originalId   Int       @map("original_id")
-  field        String    @db.VarChar(255)
-  value        String    @db.VarChar(255)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  scenario     scenarios @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  scenarioId Int       @map("scenario_id")
+  originalId Int       @map("original_id")
+  field      String    @db.VarChar(255)
+  value      String    @db.VarChar(255)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  scenario   scenarios @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
 
   @@map("scenario_edits")
 }
+
 model auth_logs {
-  id        Int      @id @default(autoincrement())
-  username  String   @db.VarChar(255)
-  fullName  String?  @map("full_name") @db.VarChar(255)
-  email     String?  @db.VarChar(255)
-  method    String   @db.VarChar(10)
-  url       String   @db.VarChar(500)
-  ip        String?  @db.VarChar(50)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  id         Int      @id @default(autoincrement())
+  username   String   @db.VarChar(255)
+  fullName   String?  @map("full_name") @db.VarChar(255)
+  email      String?  @db.VarChar(255)
+  title      String?  @db.VarChar(255)
+  department String?  @db.VarChar(255)
+  company    String?  @db.VarChar(255)
+  ip         String?  @db.VarChar(50)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
   @@map("auth_logs")
 }

@@ -34,25 +34,26 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const accessId = request.headers['access-id'];
     const ip = request.ip || request.headers['x-forwarded-for'] || '';
+    const isVerifyEndpoint =
+      request.method === 'POST' && request.url.includes('/auth/verify');
 
     if (!accessId) {
       this.logger.warn(`Blocked: no token — ${request.method} ${request.url}`);
       throw new UnauthorizedException('Отсутствует токен авторизации');
     }
 
-    // DEV токен
+    // DEV токен — только для локальной разработки
     if (this.devToken && accessId === this.devToken) {
       request.user = { username: 'developer', cn: 'Developer', mail: 'dev@local' };
 
-      // Логируем dev доступ (не ждём завершения)
-      this.authService.logAccess({
-        username: 'developer',
-        fullName: 'Developer',
-        email: 'dev@local',
-        method: request.method,
-        url: request.url,
-        ip,
-      });
+      if (isVerifyEndpoint) {
+        this.authService.logAccess({
+          username: 'developer',
+          fullName: 'Developer',
+          email: 'dev@local',
+          ip,
+        });
+      }
 
       return true;
     }
@@ -62,22 +63,28 @@ export class AuthGuard implements CanActivate {
       const userInfo = await this.authService.verifyToken(accessId);
       request.user = userInfo;
 
-      const user = userInfo?.User || userInfo;
-      const username = user?.username || 'unknown';
-      const fullName = user?.cn || '';
-      const email = user?.mail || '';
+      const user       = userInfo?.User || userInfo;
+      const username   = user?.username   || 'unknown';
+      const cn         = user?.cn         || '';
+      const mail       = user?.mail       || '';
+      const title      = user?.title      || '';
+      const department = user?.department || '';
+      const company    = user?.company    || '';
 
-      this.logger.log(`${fullName} (${email}) — ${request.method} ${request.url}`);
+      this.logger.log(`${cn} (${mail}) — ${request.method} ${request.url}`);
 
-      // Логируем в базу (не ждём завершения)
-      this.authService.logAccess({
-        username,
-        fullName,
-        email,
-        method: request.method,
-        url: request.url,
-        ip,
-      });
+      // Логируем в БД только /auth/verify (факт входа пользователя)
+      if (isVerifyEndpoint) {
+        this.authService.logAccess({
+          username,
+          fullName: cn,
+          email: mail,
+          title,
+          department,
+          company,
+          ip,
+        });
+      }
 
       return true;
     } catch {
