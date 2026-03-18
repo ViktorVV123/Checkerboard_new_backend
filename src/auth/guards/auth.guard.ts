@@ -1,3 +1,4 @@
+// src/auth/guards/auth.guard.ts
 import {
   Injectable,
   CanActivate,
@@ -8,8 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { AuthService } from '../auth.service';
-
-export const IS_PUBLIC_KEY = 'isPublic';
+import { IS_PUBLIC_KEY } from '../../common/decorators/public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -42,10 +42,8 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Отсутствует токен авторизации');
     }
 
-    // DEV токен — только для локальной разработки
     if (this.devToken && accessId === this.devToken) {
       request.user = { username: 'developer', cn: 'Developer', mail: 'dev@local' };
-
       if (isVerifyEndpoint) {
         this.authService.logAccess({
           username: 'developer',
@@ -54,11 +52,9 @@ export class AuthGuard implements CanActivate {
           ip,
         });
       }
-
       return true;
     }
 
-    // Реальный токен
     try {
       const userInfo = await this.authService.verifyToken(accessId);
       request.user = userInfo;
@@ -73,7 +69,6 @@ export class AuthGuard implements CanActivate {
 
       this.logger.log(`${cn} (${mail}) — ${request.method} ${request.url}`);
 
-      // Логируем в БД только /auth/verify (факт входа пользователя)
       if (isVerifyEndpoint) {
         this.authService.logAccess({
           username,

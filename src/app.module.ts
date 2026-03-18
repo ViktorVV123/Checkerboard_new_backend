@@ -1,3 +1,4 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -10,13 +11,12 @@ import { CalculationsModule } from './calculations/calculations.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { ScenariosModule } from './scenarios/scenarios.module';
+import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     FactoriesModule,
     ProductsModule,
@@ -24,6 +24,7 @@ import { AuthGuard } from './auth/guards/auth.guard';
     AuthModule,
     CommonModule,
     ScenariosModule,
+    ApprovalsModule,
   ],
   controllers: [AppController],
   providers: [

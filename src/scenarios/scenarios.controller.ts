@@ -1,4 +1,8 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+// src/scenarios/scenarios.controller.ts
+import {
+  Controller, Get, Post, Delete, Body, Param,
+  Query, ParseIntPipe, Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ScenariosService } from './scenarios.service';
 import { CreateScenarioDto } from './dto/create-scenario.dto';
@@ -12,75 +16,79 @@ export class ScenariosController {
 
   @Get()
   @ApiOperation({ summary: 'Список сценариев' })
-  @ApiQuery({ name: 'enterprise', required: false, example: 'ВНП' })
-  getAll(@Query('enterprise') enterprise?: string) {
-    return this.scenariosService.getAll(enterprise);
+  @ApiQuery({ name: 'enterprise', required: false })
+  getAll(
+    @Query('enterprise') enterprise?: string,
+    @Req() req?: any,
+  ) {
+    const user = req?.user?.User || req?.user;
+    const username = user?.username;
+    return this.scenariosService.getAll(enterprise, username);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Создать сценарий' })
-  create(@Body() dto: CreateScenarioDto) {
-    return this.scenariosService.create(dto);
+  @ApiOperation({ summary: 'Создать сценарий или черновик' })
+  create(@Body() dto: CreateScenarioDto, @Req() req: any) {
+    const user = req?.user?.User || req?.user;
+    const username = user?.username || dto.createdBy;
+    return this.scenariosService.create({ ...dto, createdBy: username });
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Удалить сценарий' })
-  @ApiParam({ name: 'id', example: 1 })
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.scenariosService.delete(id);
   }
 
   @Get(':id/edits')
   @ApiOperation({ summary: 'Получить правки сценария' })
-  @ApiParam({ name: 'id', example: 1 })
   getEdits(@Param('id', ParseIntPipe) id: number) {
     return this.scenariosService.getEdits(id);
   }
 
   @Post(':id/edits')
   @ApiOperation({ summary: 'Сохранить правку' })
-  @ApiParam({ name: 'id', example: 1 })
-  saveEdit(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: SaveEditDto,
-  ) {
-    return this.scenariosService.saveEdit({
-      scenarioId: id,
-      ...dto,
-    });
+  saveEdit(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveEditDto) {
+    return this.scenariosService.saveEdit({ scenarioId: id, ...dto });
   }
 
   @Post(':id/snapshot')
   @ApiOperation({ summary: 'Сохранить полный снапшот продукта' })
-  @ApiParam({ name: 'id', example: 1 })
-  saveSnapshot(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: SaveSnapshotDto,
-  ) {
+  saveSnapshot(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveSnapshotDto) {
     return this.scenariosService.saveSnapshot(id, dto.product, dto.rows);
   }
 
   @Get(':id/data')
   @ApiOperation({ summary: 'Получить данные сценария' })
-  @ApiParam({ name: 'id', example: 1 })
   getScenarioData(@Param('id', ParseIntPipe) id: number) {
     return this.scenariosService.getScenarioData(id);
   }
 
   @Delete('edits/:editId')
   @ApiOperation({ summary: 'Удалить правку' })
-  @ApiParam({ name: 'editId', example: 1 })
   deleteEdit(@Param('editId', ParseIntPipe) editId: number) {
     return this.scenariosService.deleteEdit(editId);
   }
 
   @Post(':id/approve')
   @ApiOperation({ summary: 'Утвердить сценарий' })
-  @ApiParam({ name: 'id', example: 1 })
-  approve(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { approvedBy: string },
-  ) {
+  approve(@Param('id', ParseIntPipe) id: number, @Body() body: { approvedBy: string }) {
     return this.scenariosService.approve(id, body.approvedBy);
+  }
+
+  @Post(':id/publish')
+  @ApiOperation({ summary: 'Опубликовать черновик' })
+  publish(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const user = req?.user?.User || req?.user;
+    const username = user?.username;
+    return this.scenariosService.publish(id, username);
+  }
+
+  @Post(':id/unpublish')
+  @ApiOperation({ summary: 'Вернуть сценарий в черновик' })
+  unpublish(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const user = req?.user?.User || req?.user;
+    const username = user?.username;
+    return this.scenariosService.unpublish(id, username);
   }
 }

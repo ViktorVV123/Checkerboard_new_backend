@@ -165,18 +165,21 @@ model wagon_forecast_tmp {
 }
 
 model scenarios {
-  id         Int              @id @default(autoincrement())
-  name       String           @db.VarChar(255)
-  author     String           @db.VarChar(255)
-  comment    String?          @db.Text
-  enterprise String           @db.VarChar(255)
-  approved   Boolean          @default(false)
-  approvedAt DateTime?        @map("approved_at") @db.Timestamp(6)
-  approvedBy String?          @map("approved_by") @db.VarChar(255)
-  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  edits      scenario_edits[]
+  id          Int              @id @default(autoincrement())
+  name        String           @db.VarChar(255)
+  author      String           @db.VarChar(255)
+  comment     String?          @db.Text
+  enterprise  String           @db.VarChar(255)
+  approved    Boolean          @default(false)
+  approvedAt  DateTime?        @map("approved_at") @db.Timestamp(6)
+  approvedBy  String?          @map("approved_by") @db.VarChar(255)
+  isDraft     Boolean          @default(false) @map("is_draft")
+  createdBy   String?          @map("created_by") @db.VarChar(255)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  edits       scenario_edits[]
 }
+
 
 model scenario_edits {
   id         Int       @id @default(autoincrement())
@@ -202,4 +205,18 @@ model auth_logs {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
   @@map("auth_logs")
+}
+model approvals {
+  id         Int      @id @default(autoincrement())
+  date       Int      // YYYYMMDD, например 20260317
+  enterprise String   @db.VarChar(255)
+  username   String   @db.VarChar(255)
+  fullName   String?  @db.VarChar(255)
+  status     String   @db.VarChar(20)  // 'approved' | 'rejected'
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@unique([date, enterprise, username])
+  @@map("approvals")
 }
