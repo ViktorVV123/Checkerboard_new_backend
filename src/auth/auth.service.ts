@@ -19,10 +19,18 @@ export interface IdmUserInfo {
   [key: string]: any;
 }
 
+interface TokenCacheEntry {
+  data: IdmUserInfo;
+  expiresAt: number;
+  promise?: Promise<IdmUserInfo>;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly idmBaseUrl: string;
+  private readonly CACHE_TTL_MS = 60000;
+  private tokenCache = new Map<string, TokenCacheEntry>();
 
   constructor(
     private configService: ConfigService,
@@ -68,6 +76,40 @@ export class AuthService {
   }
 
   async verifyToken(accessId: string): Promise<IdmUserInfo> {
+    const cached = this.tokenCache.get(accessId);
+
+    if (cached) {
+      if (cached.promise) {
+        return cached.promise;
+      }
+      if (Date.now() < cached.expiresAt) {
+        return cached.data;
+      }
+      this.tokenCache.delete(accessId);
+    }
+
+    const promise = this.doVerifyToken(accessId);
+
+    this.tokenCache.set(accessId, {
+      data: null as any,
+      expiresAt: 0,
+      promise,
+    });
+
+    try {
+      const data = await promise;
+      this.tokenCache.set(accessId, {
+        data,
+        expiresAt: Date.now() + this.CACHE_TTL_MS,
+      });
+      return data;
+    } catch (error) {
+      this.tokenCache.delete(accessId);
+      throw error;
+    }
+  }
+
+  private async doVerifyToken(accessId: string): Promise<IdmUserInfo> {
     try {
       const { data } = await axios.post(
         `${this.idmBaseUrl}/AddTopic`,

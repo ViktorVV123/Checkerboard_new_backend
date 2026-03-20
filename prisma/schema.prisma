@@ -190,7 +190,7 @@ model scenario_edits {
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   scenario   scenarios @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
 
-  @@map("scenario_edits")
+  @@map("_scenario_edits")
 }
 
 model auth_logs {
