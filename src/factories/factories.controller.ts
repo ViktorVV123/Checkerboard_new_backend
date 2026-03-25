@@ -13,6 +13,13 @@ export class FactoriesController {
     return this.factoriesService.getEnterprises();
   }
 
+  @Get(':enterprise/update-info')
+  @ApiOperation({ summary: 'Время обновления данных по предприятию' })
+  @ApiParam({ name: 'enterprise', example: 'ВНП' })
+  getUpdateInfo(@Param('enterprise') enterprise: string) {
+    return this.factoriesService.getUpdateInfo(enterprise);
+  }
+
   @Get(':enterprise/products')
   @ApiOperation({ summary: 'Список продуктов предприятия' })
   @ApiParam({ name: 'enterprise', example: 'ВНП' })

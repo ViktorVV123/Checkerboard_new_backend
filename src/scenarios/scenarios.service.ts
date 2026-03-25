@@ -167,4 +167,9 @@ export class ScenariosService {
       data: { isDraft: true },
     });
   }
+  async deleteEditByParams(scenarioId: number, originalId: number, field: string) {
+    await this.prisma.scenario_edits.deleteMany({
+      where: { scenarioId, originalId, field },
+    });
+  }
 }

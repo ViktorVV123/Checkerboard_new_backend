@@ -58,6 +58,14 @@ model chess_data_new {
   expectedForForecast   Float?    @map("Ожид_для_прогноза")
   obr                   Decimal?  @map("ОБР") @db.Decimal(28, 6)
   insertedAt            DateTime? @default(now()) @map("inserted_at") @db.Timestamp(6)
+  railwayPlan           Int?      @map("ЖДплан")
+  pipePlan              Int?      @map("Трубаплан")
+  waterPlan             Int?      @map("Водаплан")
+  mnppPlan              Int?      @map("МНППплан")
+  railwayObr            Int?      @map("ЖДобр")
+  pipeObr               Int?      @map("Трубаобр")
+  waterObr              Int?      @map("Водаобр")
+  mnppObr               Int?      @map("МНППобр")
 
   @@map("chess_data_new")
 }

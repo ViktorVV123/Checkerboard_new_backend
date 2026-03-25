@@ -5,7 +5,6 @@ import { PrismaService } from '../prisma/prisma.service';
 export class FactoriesService {
   constructor(private prisma: PrismaService) {}
 
-  // Маппинг названий продуктов по заводам
   private productNameMap: Record<string, Record<string, string>> = {
     'ВНП': {
       'Авиакеросины': 'ТС-1',
@@ -20,14 +19,12 @@ export class FactoriesService {
     },
   };
 
-  // Скрытые продукты по заводам
   private hiddenProducts: Record<string, string[]> = {
     'ВНП': ['ТБЛ'],
     'ННОС': ['ТБЛ', 'ТБЛ (DMA)'],
     'ПНОС': ['ТБЛ', 'ТБЛ (DMA)'],
   };
 
-  // Порядок продуктов по заводам
   private productOrder: Record<string, string[]> = {
     'ВНП': [
       'Нафта', 'АИ-92', 'АИ-95', 'ТС-1', 'ДТ сорт', 'ДТ кл.',
@@ -71,21 +68,17 @@ export class FactoriesService {
 
     const products = result.map((r) => r.product);
 
-    // Убираем скрытые продукты
     const hidden = this.hiddenProducts[enterprise] || [];
     const visible = products.filter((p) => !hidden.includes(p));
 
-    // Заменяем все "ДТ кл.X" на один "ДТ кл."
     const hasDtKl = visible.some((p) => p.startsWith('ДТ кл.'));
     const filtered = visible.filter((p) => !p.startsWith('ДТ кл.'));
     if (hasDtKl) {
       filtered.push('ДТ кл.');
     }
 
-    // Применяем переименование
     const renamed = filtered.map((p) => this.renameProduct(enterprise, p));
 
-    // Сортируем по заданному порядку
     const order = this.productOrder[enterprise] || [];
     return renamed.sort((a, b) => {
       const indexA = order.indexOf(a);
@@ -101,35 +94,116 @@ export class FactoriesService {
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
+    // От: последний день предыдущего месяца
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
     const lastDayPrev = new Date(year, month - 1, 0).getDate();
     const dateFrom = prevYear * 10000 + prevMonth * 100 + lastDayPrev;
 
-    const lastDayCurr = new Date(year, month, 0).getDate();
-    const dateTo = year * 10000 + month * 100 + lastDayCurr;
+    // До: 10-е число следующего месяца
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const dateTo = nextYear * 10000 + nextMonth * 100 + 15;
 
     return { dateFrom, dateTo };
+  }
+
+  /**
+   * Генерирует пустые строки для дней, которых нет в данных из БД.
+   * Покрывает диапазон от первого дня текущего месяца до 10-го следующего.
+   */
+  private fillMissingDays(
+    rows: any[],
+    enterprise: string,
+    product: string,
+  ): any[] {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    const lastDayCurr = new Date(year, month, 0).getDate();
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+
+    // Хеш продукта для уникальности id
+    // Хеш продукта — маленький, 2 цифры
+    let productHash = 0;
+    for (let i = 0; i < product.length; i++) {
+      productHash =((productHash << 5) - productHash + product.charCodeAt(i)) | 0;
+    }
+    productHash = Math.abs(productHash) % 100;
+    const allDates: number[] = [];
+    for (let d = 1; d <= lastDayCurr; d++) {
+      allDates.push(year * 10000 + month * 100 + d);
+    }
+    for (let d = 1; d <= 15; d++) {
+      allDates.push(nextYear * 10000 + nextMonth * 100 + d);
+    }
+
+    const existingDates = new Set(rows.map((r) => r.date));
+    const result = [...rows];
+
+    for (const date of allDates) {
+      if (!existingDates.has(date)) {
+        result.push({
+          id: -(date * 100 + productHash),
+          date,
+          enterprise,
+          product,
+          plan: null,
+          fact: null,
+          expected: null,
+          tradeRemains: null,
+          freeCapacity: null,
+          parkVolume: null,
+          shipmentFact: null,
+          railwayShipmentFact: null,
+          pipeShipmentFact: null,
+          mnppShipmentFact: null,
+          waterShipmentFact: null,
+          shipmentPlan: null,
+          passport: null,
+          passportForecast: null,
+          unregisteredShipment: null,
+          pourShipment: null,
+          obr: null,
+          railwayPlan: null,
+          pipePlan: null,
+          mnppPlan: null,
+          waterPlan: null,
+          railwayObr: null,
+          pipeObr: null,
+          mnppObr: null,
+          waterObr: null,
+        });
+      }
+    }
+
+    return result.sort((a, b) => a.date - b.date);
   }
 
   async getProductData(enterprise: string, product: string) {
     const { dateFrom, dateTo } = this.getDateRange();
 
-    // Переводим отображаемое имя обратно в оригинальное
     const originalName = this.originalProductName(enterprise, product);
 
+    let rows: any[];
+
     if (originalName === 'ДТ кл.') {
-      return this.getDtKlAggregated(enterprise, dateFrom, dateTo);
+      rows = await this.getDtKlAggregated(enterprise, dateFrom, dateTo);
+    } else {
+      rows = await this.prisma.chess_data_new.findMany({
+        where: {
+          enterprise,
+          product: originalName,
+          date: { gte: dateFrom, lte: dateTo },
+        },
+        orderBy: { date: 'asc' },
+      });
     }
 
-    return this.prisma.chess_data_new.findMany({
-      where: {
-        enterprise,
-        product: originalName,
-        date: { gte: dateFrom, lte: dateTo },
-      },
-      orderBy: { date: 'asc' },
-    });
+    // Дорисовываем пустые строки для дней следующего месяца
+    return this.fillMissingDays(rows, enterprise, originalName);
   }
 
   private async getDtKlAggregated(
@@ -192,5 +266,51 @@ export class FactoriesService {
     }
 
     return Array.from(grouped.values());
+  }
+
+  async getUpdateInfo(enterprise: string) {
+    const rows: any[] = await this.prisma.$queryRaw`
+        SELECT "Тип данных" as "dataType", "inserted_at" as "insertedAt"
+        FROM chess.update_info
+        WHERE "Предприятие" = ${enterprise}
+        ORDER BY "inserted_at" DESC
+    `;
+
+    const result: Record<string, Record<string, string>> = {};
+
+    for (const row of rows) {
+      const type = row.dataType as string;
+      const date = row.insertedAt;
+
+      if (!type || !date) continue;
+
+      const formatted = new Date(date).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      if (type === 'Данные обновлены') {
+        result['Обновлено'] = { '': formatted };
+        continue;
+      }
+
+      const parts = type.split(' ');
+      if (parts.length < 2) continue;
+
+      const category = parts[0];
+      const rawSub = parts.slice(1).join(' ');
+
+      let sub = rawSub;
+      if (rawSub.includes('производств')) sub = 'Произ-во';
+      else if (rawSub.includes('отгрузк')) sub = 'Отгрузка';
+      else if (rawSub.includes('остатк')) sub = 'Остатки';
+
+      if (!result[category]) result[category] = {};
+      result[category][sub] = formatted;
+    }
+
+    return result;
   }
 }

@@ -91,4 +91,12 @@ export class ScenariosController {
     const username = user?.username;
     return this.scenariosService.unpublish(id, username);
   }
+  @Delete(':id/edits/:originalId/:field')
+  deleteEditByParams(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('originalId', ParseIntPipe) originalId: number,
+    @Param('field') field: string,
+  ) {
+    return this.scenariosService.deleteEditByParams(id, originalId, field);
+  }
 }

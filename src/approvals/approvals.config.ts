@@ -10,20 +10,20 @@ export interface Approver {
 export const APPROVERS_BY_ENTERPRISE: Record<string, Approver[]> = {
   'ВНП': [
     { username: 'vlasyukviv',    fullName: 'Власюк Виктор Васильевич' },
-    { username: 'mikhajlovdmn',  fullName: 'Михайлов Д.М.' },
+    { username: 'kislovdmm',  fullName: 'Кислов Дмитрий Михайлович' },
     { username: 'borzovpe',      fullName: 'Борзов П.Е.' },
-    { username: 'mikhajlovnn',   fullName: 'Михайлов Н.Н.' },
+    { username: 'ivanovdmitrya',   fullName: 'Иванов Дмитрий Александрович' },
   ],
   'ННОС': [
     { username: 'vlasyukviv',    fullName: 'Власюк Виктор Васильевич' },
-    { username: 'mikhajlovdmn',  fullName: 'Михайлов Д.М.' },
+    { username: 'kislovdmm',  fullName: 'Кислов Дмитрий Михайлович' },
     { username: 'borzovpe',      fullName: 'Борзов П.Е.' },
-    { username: 'mikhajlovnn',   fullName: 'Михайлов Н.Н.' },
+    { username: 'ivanovdmitrya',   fullName: 'Иванов Дмитрий Александрович' },
   ],
   'ПНОС': [
     { username: 'vlasyukviv',    fullName: 'Власюк Виктор Васильевич' },
-    { username: 'mikhajlovdmn',  fullName: 'Михайлов Д.М.' },
+    { username: 'kislovdmm',  fullName: 'Кислов Дмитрий Михайлович' },
     { username: 'borzovpe',      fullName: 'Борзов П.Е.' },
-    { username: 'mikhajlovnn',   fullName: 'Михайлов Н.Н.' },
+    { username: 'ivanovdmitrya',   fullName: 'Иванов Дмитрий Александрович' },
   ],
 };
