@@ -25,6 +25,13 @@ export class FactoriesService {
     'ПНОС': ['ТБЛ', 'ТБЛ (DMA)'],
   };
 
+  /** Какие продукты из БД суммируются в "ФДТ" для каждого завода */
+  private fdtComponents: Record<string, string[]> = {
+    'ВНП': ['ФДТ', 'ТБЛ'],
+    'ННОС': ['ФДТ', 'ТБЛ', 'ТБЛ (DMA)'],
+    'ПНОС': ['ФДТ', 'ТБЛ', 'ТБЛ (DMA)'],
+  };
+
   private productOrder: Record<string, string[]> = {
     'ВНП': [
       'Нафта', 'АИ-92', 'АИ-95', 'ТС-1', 'ДТ сорт', 'ДТ кл.',
@@ -94,13 +101,11 @@ export class FactoriesService {
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
-    // От: последний день предыдущего месяца
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
     const lastDayPrev = new Date(year, month - 1, 0).getDate();
     const dateFrom = prevYear * 10000 + prevMonth * 100 + lastDayPrev;
 
-    // До: 10-е число следующего месяца
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
     const dateTo = nextYear * 10000 + nextMonth * 100 + 15;
@@ -108,10 +113,6 @@ export class FactoriesService {
     return { dateFrom, dateTo };
   }
 
-  /**
-   * Генерирует пустые строки для дней, которых нет в данных из БД.
-   * Покрывает диапазон от первого дня текущего месяца до 10-го следующего.
-   */
   private fillMissingDays(
     rows: any[],
     enterprise: string,
@@ -125,13 +126,12 @@ export class FactoriesService {
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
 
-    // Хеш продукта для уникальности id
-    // Хеш продукта — маленький, 2 цифры
     let productHash = 0;
     for (let i = 0; i < product.length; i++) {
-      productHash =((productHash << 5) - productHash + product.charCodeAt(i)) | 0;
+      productHash = ((productHash << 5) - productHash + product.charCodeAt(i)) | 0;
     }
     productHash = Math.abs(productHash) % 100;
+
     const allDates: number[] = [];
     for (let d = 1; d <= lastDayCurr; d++) {
       allDates.push(year * 10000 + month * 100 + d);
@@ -150,31 +150,14 @@ export class FactoriesService {
           date,
           enterprise,
           product,
-          plan: null,
-          fact: null,
-          expected: null,
-          tradeRemains: null,
-          freeCapacity: null,
-          parkVolume: null,
-          shipmentFact: null,
-          railwayShipmentFact: null,
-          pipeShipmentFact: null,
-          mnppShipmentFact: null,
-          waterShipmentFact: null,
-          shipmentPlan: null,
-          passport: null,
-          passportForecast: null,
-          unregisteredShipment: null,
-          pourShipment: null,
-          obr: null,
-          railwayPlan: null,
-          pipePlan: null,
-          mnppPlan: null,
-          waterPlan: null,
-          railwayObr: null,
-          pipeObr: null,
-          mnppObr: null,
-          waterObr: null,
+          plan: null, fact: null, expected: null,
+          tradeRemains: null, freeCapacity: null, parkVolume: null,
+          shipmentFact: null, railwayShipmentFact: null, pipeShipmentFact: null,
+          mnppShipmentFact: null, waterShipmentFact: null, shipmentPlan: null,
+          passport: null, passportForecast: null, unregisteredShipment: null,
+          pourShipment: null, obr: null,
+          railwayPlan: null, pipePlan: null, mnppPlan: null, waterPlan: null,
+          railwayObr: null, pipeObr: null, mnppObr: null, waterObr: null,
         });
       }
     }
@@ -191,6 +174,8 @@ export class FactoriesService {
 
     if (originalName === 'ДТ кл.') {
       rows = await this.getDtKlAggregated(enterprise, dateFrom, dateTo);
+    } else if (originalName === 'ФДТ' && this.fdtComponents[enterprise]) {
+      rows = await this.getFdtAggregated(enterprise, dateFrom, dateTo);
     } else {
       rows = await this.prisma.chess_data_new.findMany({
         where: {
@@ -202,8 +187,38 @@ export class FactoriesService {
       });
     }
 
-    // Дорисовываем пустые строки для дней следующего месяца
     return this.fillMissingDays(rows, enterprise, originalName);
+  }
+
+  /**
+   * Агрегирует ФДТ из нескольких продуктов в зависимости от завода.
+   * ВНП: ФДТ + ТБЛ
+   * ННОС: ФДТ + ТБЛ + ТБЛ (DMA)
+   * ПНОС: ФДТ + ТБЛ + ТБЛ (DMA)
+   */
+  private async getFdtAggregated(
+    enterprise: string,
+    dateFrom: number,
+    dateTo: number,
+  ) {
+    const components = this.fdtComponents[enterprise];
+    if (!components || components.length === 0) {
+      return this.prisma.chess_data_new.findMany({
+        where: { enterprise, product: 'ФДТ', date: { gte: dateFrom, lte: dateTo } },
+        orderBy: { date: 'asc' },
+      });
+    }
+
+    const rows = await this.prisma.chess_data_new.findMany({
+      where: {
+        enterprise,
+        product: { in: components },
+        date: { gte: dateFrom, lte: dateTo },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    return this.aggregateByDate(rows, 'ФДТ');
   }
 
   private async getDtKlAggregated(
@@ -220,29 +235,38 @@ export class FactoriesService {
       orderBy: { date: 'asc' },
     });
 
+    return this.aggregateByDate(rows, 'ДТ кл.');
+  }
+
+  /**
+   * Общий метод агрегации строк по дате.
+   * Суммирует числовые поля для строк с одинаковой датой.
+   */
+  private aggregateByDate(rows: any[], productName: string): any[] {
     const grouped = new Map<number, any>();
+
+    const numericFields = [
+      'plan', 'fact', 'expected', 'tradeRemains', 'freeCapacity',
+      'parkVolume', 'tradeRemains2', 'parkVolumeForForecast',
+    ];
+    const decimalFields = [
+      'railwayShipment', 'waterShipment', 'pipe', 'mnpp',
+      'autoShipment', 'shipmentPlan', 'shipmentFact',
+      'waterShipmentFact', 'railwayShipmentFact', 'autoShipmentFact',
+      'pipeShipmentFact', 'mnppShipmentFact', 'passport',
+      'passportForecast', 'shipment', 'shipmentForForecast',
+      'expectedForForecast', 'obr',
+    ];
+    const bigintFields = ['pourShipment', 'unregisteredShipment'];
 
     for (const row of rows) {
       if (!grouped.has(row.date)) {
         grouped.set(row.date, {
           ...row,
-          product: 'ДТ кл.',
+          product: productName,
         });
       } else {
         const existing = grouped.get(row.date);
-        const numericFields = [
-          'plan', 'fact', 'expected', 'tradeRemains', 'freeCapacity',
-          'parkVolume', 'tradeRemains2', 'parkVolumeForForecast',
-        ];
-        const decimalFields = [
-          'railwayShipment', 'waterShipment', 'pipe', 'mnpp',
-          'autoShipment', 'shipmentPlan', 'shipmentFact',
-          'waterShipmentFact', 'railwayShipmentFact', 'autoShipmentFact',
-          'pipeShipmentFact', 'mnppShipmentFact', 'passport',
-          'passportForecast', 'shipment', 'shipmentForForecast',
-          'expectedForForecast', 'obr',
-        ];
-        const bigintFields = ['pourShipment', 'unregisteredShipment'];
 
         for (const field of numericFields) {
           if (row[field] !== null && row[field] !== undefined) {
@@ -252,8 +276,7 @@ export class FactoriesService {
 
         for (const field of decimalFields) {
           if (row[field] !== null && row[field] !== undefined) {
-            const val = Number(existing[field] || 0) + Number(row[field]);
-            existing[field] = val;
+            existing[field] = Number(existing[field] || 0) + Number(row[field]);
           }
         }
 

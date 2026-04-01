@@ -31,6 +31,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalFilters(new PrismaExceptionFilter());
 
-  await app.listen(3002);
+  await app.listen(3000);
 }
 bootstrap();
