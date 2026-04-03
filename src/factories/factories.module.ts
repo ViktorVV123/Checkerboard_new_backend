@@ -5,5 +5,6 @@ import { FactoriesService } from './factories.service';
 @Module({
   controllers: [FactoriesController],
   providers: [FactoriesService],
+  exports: [FactoriesService],
 })
 export class FactoriesModule {}

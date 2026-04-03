@@ -100,6 +100,20 @@ export class FactoriesService {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
+    const day = now.getDate();
+
+    // 1-е число → показываем предыдущий месяц + 15 дней текущего
+    // 2-е число и далее → текущий месяц + 15 дней следующего
+    if (day === 1) {
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+      const prevPrevMonth = prevMonth === 1 ? 12 : prevMonth - 1;
+      const prevPrevYear = prevMonth === 1 ? prevYear - 1 : prevYear;
+      const lastDayPrevPrev = new Date(prevYear, prevMonth - 1, 0).getDate();
+      const dateFrom = prevPrevYear * 10000 + prevPrevMonth * 100 + lastDayPrevPrev;
+      const dateTo = year * 10000 + month * 100 + 15;
+      return { dateFrom, dateTo };
+    }
 
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
@@ -121,10 +135,7 @@ export class FactoriesService {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
-
-    const lastDayCurr = new Date(year, month, 0).getDate();
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
+    const day = now.getDate();
 
     let productHash = 0;
     for (let i = 0; i < product.length; i++) {
@@ -133,11 +144,31 @@ export class FactoriesService {
     productHash = Math.abs(productHash) % 100;
 
     const allDates: number[] = [];
-    for (let d = 1; d <= lastDayCurr; d++) {
-      allDates.push(year * 10000 + month * 100 + d);
-    }
-    for (let d = 1; d <= 15; d++) {
-      allDates.push(nextYear * 10000 + nextMonth * 100 + d);
+
+    if (day === 1) {
+      // 1-е число → предыдущий месяц + 15 дней текущего
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+      const lastDayPrev = new Date(year, month - 1, 0).getDate();
+
+      for (let d = 1; d <= lastDayPrev; d++) {
+        allDates.push(prevYear * 10000 + prevMonth * 100 + d);
+      }
+      for (let d = 1; d <= 15; d++) {
+        allDates.push(year * 10000 + month * 100 + d);
+      }
+    } else {
+      // 2-е число и далее → текущий месяц + 15 дней следующего
+      const lastDayCurr = new Date(year, month, 0).getDate();
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextYear = month === 12 ? year + 1 : year;
+
+      for (let d = 1; d <= lastDayCurr; d++) {
+        allDates.push(year * 10000 + month * 100 + d);
+      }
+      for (let d = 1; d <= 15; d++) {
+        allDates.push(nextYear * 10000 + nextMonth * 100 + d);
+      }
     }
 
     const existingDates = new Set(rows.map((r) => r.date));

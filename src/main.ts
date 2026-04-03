@@ -17,8 +17,18 @@ async function bootstrap() {
     .setTitle('Factory Portal API')
     .setDescription('API для управления данными заводов')
     .setVersion('1.0')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'access-id',
+        in: 'header',
+        description: 'Access Token (IdM или DEV)',
+      },
+      'access-id',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
+  document.security = [{ 'access-id': [] }];
   SwaggerModule.setup('api', app, document);
 
   app.useGlobalPipes(
@@ -31,6 +41,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalFilters(new PrismaExceptionFilter());
 
-  await app.listen(3000);
+  await app.listen(3002);
+
 }
 bootstrap();

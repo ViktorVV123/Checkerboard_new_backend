@@ -228,3 +228,15 @@ model approvals {
   @@unique([date, enterprise, username])
   @@map("approvals")
 }
+model history_snapshots {
+  id         Int      @id @default(autoincrement())
+  enterprise String   @db.VarChar(255)
+  product    String   @db.VarChar(255)
+  date       Int
+  field      String   @db.VarChar(100)
+  value      String?  @db.Text
+  snapshotAt DateTime @map("snapshot_at") @db.Timestamp(6)
+
+  @@index([enterprise, product, snapshotAt])
+  @@map("history_snapshots")
+}
