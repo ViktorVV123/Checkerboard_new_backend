@@ -13,6 +13,7 @@ import { CommonModule } from './common/common.module';
 import { ScenariosModule } from './scenarios/scenarios.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { HistoryModule } from './history/history.module';
+import { ImportModule } from './import/import.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 
 @Module({
@@ -28,6 +29,7 @@ import { AuthGuard } from './auth/guards/auth.guard';
     ScenariosModule,
     ApprovalsModule,
     HistoryModule,
+    ImportModule,
   ],
   controllers: [AppController],
   providers: [
