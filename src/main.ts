@@ -49,6 +49,5 @@ async function bootstrap() {
   app.useGlobalFilters(new PrismaExceptionFilter());
 
   await app.listen(3000);
-
 }
 bootstrap();
